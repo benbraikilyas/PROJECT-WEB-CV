@@ -1,0 +1,127 @@
+{
+  "personal": {
+    "name": "Alex Johnson",
+    "role": "Full Stack Developer",
+    "email": "alex.johnson@example.com",
+    "phone": "+1 (555) 123-4567",
+    "location": "San Francisco, CA",
+    "availability": "Available for hire",
+    "profileImage": "/profile.jpg",
+    "cvUrl": "/cv.pdf",
+    "bio": "Passionate full-stack developer with 5+ years of experience creating innovative web applications. I specialize in React, Node.js, and modern web technologies. Always eager to tackle challenging problems and deliver exceptional user experiences.",
+    "headline": "Building the Future, One Line of Code at a Time",
+    "subtitle": "I create beautiful, functional, and user-centered digital experiences"
+  },
+  "social": {
+    "github": "https://github.com/alexjohnson",
+    "linkedin": "https://linkedin.com/in/alexjohnson",
+    "twitter": "https://twitter.com/alexjohnson",
+    "email": "mailto:alex.johnson@example.com"
+  },
+  "skills": {
+    "frontend": [
+      { "name": "React", "level": 95 },
+      { "name": "TypeScript", "level": 90 },
+      { "name": "Next.js", "level": 85 },
+      { "name": "Tailwind CSS", "level": 92 },
+      { "name": "Vue.js", "level": 80 }
+    ],
+    "backend": [
+      { "name": "Node.js", "level": 88 },
+      { "name": "Python", "level": 85 },
+      { "name": "Express.js", "level": 90 },
+      { "name": "GraphQL", "level": 82 },
+      { "name": "REST APIs", "level": 95 }
+    ],
+    "databases": [
+      { "name": "MongoDB", "level": 87 },
+      { "name": "PostgreSQL", "level": 85 },
+      { "name": "Redis", "level": 78 },
+      { "name": "Firebase", "level": 80 }
+    ],
+    "tools": [
+      { "name": "Git", "level": 95 },
+      { "name": "Docker", "level": 80 },
+      { "name": "AWS", "level": 75 },
+      { "name": "Figma", "level": 85 },
+      { "name": "Webpack", "level": 82 }
+    ]
+  },
+  "stats": [
+    { "label": "Projects Completed", "value": "50+" },
+    { "label": "Years Experience", "value": "5+" },
+    { "label": "Happy Clients", "value": "30+" },
+    { "label": "Code Commits", "value": "2000+" }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "title": "E-Commerce Platform",
+      "description": "Full-featured e-commerce platform with React, Node.js, and Stripe integration. Features include user authentication, product management, and order processing.",
+      "image": "https://images.pexels.com/photos/4968639/pexels-photo-4968639.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "tech": ["React", "Node.js", "MongoDB", "Stripe", "Tailwind CSS"],
+      "github": "https://github.com/alexjohnson/ecommerce-platform",
+      "demo": "https://ecommerce-demo.netlify.app",
+      "featured": true
+    },
+    {
+      "id": 2,
+      "title": "Task Management App",
+      "description": "Collaborative task management application with real-time updates, team collaboration, and project tracking features.",
+      "image": "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "tech": ["Next.js", "TypeScript", "Prisma", "PostgreSQL", "Socket.io"],
+      "github": "https://github.com/alexjohnson/task-manager",
+      "demo": "https://taskmanager-demo.vercel.app",
+      "featured": true
+    },
+    {
+      "id": 3,
+      "title": "Weather Dashboard",
+      "description": "Beautiful weather dashboard with location-based forecasts, interactive maps, and detailed weather analytics.",
+      "image": "https://images.pexels.com/photos/1118873/pexels-photo-1118873.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "tech": ["Vue.js", "Chart.js", "OpenWeather API", "SCSS"],
+      "github": "https://github.com/alexjohnson/weather-dashboard",
+      "demo": "https://weather-dashboard-demo.netlify.app",
+      "featured": false
+    },
+    {
+      "id": 4,
+      "title": "Social Media Analytics",
+      "description": "Comprehensive social media analytics platform with data visualization, engagement tracking, and performance insights.",
+      "image": "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "tech": ["React", "D3.js", "Python", "FastAPI", "PostgreSQL"],
+      "github": "https://github.com/alexjohnson/social-analytics",
+      "demo": "https://social-analytics-demo.herokuapp.com",
+      "featured": true
+    }
+  ],
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Sarah Chen",
+      "role": "Product Manager",
+      "company": "TechCorp",
+      "feedback": "Alex delivered exceptional work on our e-commerce platform. His attention to detail and technical expertise made the project a huge success.",
+      "rating": 5,
+      "avatar": "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop"
+    },
+    {
+      "id": 2,
+      "name": "Michael Rodriguez",
+      "role": "CTO",
+      "company": "StartupXYZ",
+      "feedback": "Working with Alex was a game-changer for our startup. He built our entire platform from scratch and delivered beyond our expectations.",
+      "rating": 5,
+      "avatar": "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop"
+    },
+    {
+      "id": 3,
+      "name": "Emily Zhang",
+      "role": "Design Lead",
+      "company": "Creative Agency",
+      "feedback": "Alex's ability to translate our designs into pixel-perfect, interactive experiences is remarkable. Highly recommended!",
+      "rating": 5,
+      "avatar": "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop"
+    }
+  ]
+}
