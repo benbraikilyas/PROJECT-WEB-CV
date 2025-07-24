@@ -12,7 +12,7 @@ const CVTemplate: React.FC = () => {
       id: 1,
       name: "Professional CV",
       description: "Clean and modern professional CV template",
-      image: "/path/to/image.jpg",
+      image: "/public/images/download (1).jpeg",
       price: "Free",
       rating: 4.5,
       features: ["ATS-Friendly", "Modern Design", "Customizable"],
