@@ -2,23 +2,64 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Briefcase, GraduationCap, Award, Download, Eye, Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import CVPreview from './CVBuilder/CVPreview';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+// Type definitions
+interface CVData {
+  personalInfo: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    summary: string;
+  };
+  experience: Experience[];
+  education: Education[];
+  skills: Skill[];
+}
+
+interface Experience {
+  title: string;
+  company: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
+interface Education {
+  degree: string;
+  school: string;
+  location: string;
+  graduationDate: string;
+  gpa: string;
+}
+
+interface Skill {
+  name: string;
+  level: string;
+}
 
 const CVBuilder: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [isFormValid, setIsFormValid] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [cvData, setCvData] = useState({
+  const [cvData, setCvData] = useState<CVData>({
     personalInfo: {
       fullName: '',
       email: '',
       phone: '',
-      address: ''
+      address: '',
+      summary: ''
     },
     experience: [],
     education: [],
     skills: []
   });
+  const [showPreview, setShowPreview] = useState(false);
 
   const steps = [
     { id: 0, name: 'Personal Info', icon: User },
@@ -61,11 +102,18 @@ const CVBuilder: React.FC = () => {
     }));
   };
 
-  const removeItem = (section: string, index: number) => {
-    setCvData(prev => ({
-      ...prev,
-      [section]: prev[section as keyof typeof prev].filter((_: any, i: number) => i !== index)
-    }));
+  type Section = 'experience' | 'education' | 'skills';
+  const removeItem = (section: Section, index: number) => {
+    setCvData(prev => {
+      const arr = prev[section];
+      if (Array.isArray(arr)) {
+        return {
+          ...prev,
+          [section]: arr.filter((_, i) => i !== index)
+        };
+      }
+      return prev;
+    });
   };
 
   const updatePersonal = (field: string, value: string) => {
@@ -130,6 +178,36 @@ const CVBuilder: React.FC = () => {
     validateForm();
   }, [cvData]);
 
+  const handlePreview = () => {
+    if (!isFormValid) {
+      toast.error('Please complete all required fields before previewing.');
+      return;
+    }
+    setShowPreview(true);
+  };
+
+  const handleDownload = async () => {
+    setIsSaving(true);
+    try {
+      const previewElement = document.getElementById('cv-preview-modal-content');
+      if (!previewElement) throw new Error('Preview element not found');
+      const canvas = await html2canvas(previewElement);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save('CV.pdf');
+      toast.success('CV downloaded successfully!');
+    } catch (error) {
+      toast.error('Failed to generate PDF.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const saveCV = () => {
     // Save to localStorage instead of database
     localStorage.setItem('cvData', JSON.stringify(cvData));
@@ -140,12 +218,8 @@ const CVBuilder: React.FC = () => {
     if (validateForm()) {
       setIsSaving(true);
       try {
-        // Save CV to database
-        await cvDatabase.saveBuilderCV(cvData, {
-          name: cvData.personal.name,
-          email: cvData.personal.email,
-          phone: cvData.personal.phone
-        });
+        // Save CV to localStorage instead of database
+        localStorage.setItem('cvData', JSON.stringify(cvData));
         
         toast.success('CV saved and generated successfully! Download will start shortly.');
         
@@ -217,7 +291,7 @@ const CVBuilder: React.FC = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={previewCV}
+                  onClick={handlePreview}
                   className={`w-full font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
                     isFormValid 
                       ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
@@ -231,7 +305,14 @@ const CVBuilder: React.FC = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={saveCV}
+                  onClick={async () => {
+                    if (!isFormValid) {
+                      toast.error('Please complete all required fields before downloading.');
+                      return;
+                    }
+                    setShowPreview(true);
+                    setTimeout(handleDownload, 500); // Show preview, then download
+                  }}
                   disabled={isSaving}
                   className={`w-full font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
                     isFormValid && !isSaving
@@ -611,21 +692,51 @@ const CVBuilder: React.FC = () => {
                 >
                   Previous
                 </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
-                  disabled={activeStep === steps.length - 1}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                </motion.button>
+                {activeStep < steps.length - 1 && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
+                    disabled={activeStep === steps.length - 1}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           </div>
         </div>
       </div>
+      {/* CV Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPreview(false)}
+              className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+            >
+              ✕
+            </button>
+            <div id="cv-preview-modal-content">
+              <CVPreview data={cvData} />
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Download size={18} /> Download PDF
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 };
