@@ -14,10 +14,19 @@ interface CVData {
     phone: string;
     address: string;
     summary: string;
+    photo: string; // New field for photo URL
+    socialMedia: {
+      linkedin: string;
+      github: string;
+      website: string;
+    };
+    additionalInfo: string; // New field for additional info
   };
   experience: Experience[];
   education: Education[];
   skills: Skill[];
+  certifications: Certification[]; // New field for certifications
+  languages: Language[]; // New field for languages
 }
 
 interface Experience {
@@ -42,6 +51,17 @@ interface Skill {
   level: string;
 }
 
+interface Certification {
+  name: string;
+  issuingOrganization: string;
+  date: string;
+}
+
+interface Language {
+  name: string;
+  proficiency: string;
+}
+
 const CVBuilder: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [isFormValid, setIsFormValid] = useState(false);
@@ -53,19 +73,32 @@ const CVBuilder: React.FC = () => {
       email: '',
       phone: '',
       address: '',
-      summary: ''
+      summary: '',
+      photo: '', // Initialize new photo field
+      socialMedia: {
+        linkedin: '',
+        github: '',
+        website: '',
+      },
+      additionalInfo: '', // Initialize new additional info field
     },
     experience: [],
     education: [],
-    skills: []
+    skills: [],
+    certifications: [], // Initialize new certifications field
+    languages: [] // Initialize new languages field
   });
   const [showPreview, setShowPreview] = useState(false);
+  const [showMarkdownPreview, setShowMarkdownPreview] = useState(false); // New state for Markdown preview
+  const [selectedTheme, setSelectedTheme] = useState('blue'); // New state for theme selection, default to 'blue'
 
   const steps = [
     { id: 0, name: 'Personal Info', icon: User },
     { id: 1, name: 'Experience', icon: Briefcase },
     { id: 2, name: 'Education', icon: GraduationCap },
     { id: 3, name: 'Skills', icon: Award },
+    { id: 4, name: 'Certifications', icon: Award }, // New step for Certifications
+    { id: 5, name: 'Languages', icon: Award }, // New step for Languages
   ];
 
   const addExperience = () => {
@@ -102,10 +135,24 @@ const CVBuilder: React.FC = () => {
     }));
   };
 
-  type Section = 'experience' | 'education' | 'skills';
+  const addCertification = () => {
+    setCvData(prev => ({
+      ...prev,
+      certifications: [...prev.certifications, { name: '', issuingOrganization: '', date: '' }]
+    }));
+  };
+
+  const addLanguage = () => {
+    setCvData(prev => ({
+      ...prev,
+      languages: [...prev.languages, { name: '', proficiency: 'Intermediate' }]
+    }));
+  };
+
+  type Section = 'experience' | 'education' | 'skills' | 'certifications' | 'languages';
   const removeItem = (section: Section, index: number) => {
     setCvData(prev => {
-      const arr = prev[section];
+      const arr = prev[section as keyof CVData];
       if (Array.isArray(arr)) {
         return {
           ...prev,
@@ -116,11 +163,37 @@ const CVBuilder: React.FC = () => {
     });
   };
 
-  const updatePersonal = (field: string, value: string) => {
-    setCvData(prev => ({
-      ...prev,
-      personalInfo: { ...prev.personalInfo, [field]: value }
-    }));
+  const updatePersonal = (field: string, value: string | File) => {
+    setCvData(prev => {
+      if (field === 'photo' && value instanceof File) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setCvData(current => ({
+            ...current,
+            personalInfo: { ...current.personalInfo, photo: reader.result as string }
+          }));
+        };
+        reader.readAsDataURL(value);
+        return prev;
+      } else if (field.startsWith('socialMedia.')) {
+        const socialField = field.split('.')[1];
+        return {
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            socialMedia: {
+              ...prev.personalInfo.socialMedia,
+              [socialField]: value as string
+            }
+          }
+        };
+      } else {
+        return {
+          ...prev,
+          personalInfo: { ...prev.personalInfo, [field]: value as string }
+        };
+      }
+    });
   };
 
   const updateExperience = (index: number, field: string, value: string) => {
@@ -150,6 +223,24 @@ const CVBuilder: React.FC = () => {
     }));
   };
 
+  const updateCertification = (index: number, field: string, value: string) => {
+    setCvData(prev => ({
+      ...prev,
+      certifications: prev.certifications.map((cert: any, i: number) => 
+        i === index ? { ...cert, [field]: value } : cert
+      )
+    }));
+  };
+
+  const updateLanguage = (index: number, field: string, value: string) => {
+    setCvData(prev => ({
+      ...prev,
+      languages: prev.languages.map((lang: any, i: number) => 
+        i === index ? { ...lang, [field]: value } : lang
+      )
+    }));
+  };
+
   const validateForm = () => {
     const errors: string[] = [];
     
@@ -169,6 +260,12 @@ const CVBuilder: React.FC = () => {
     // Validate skills
     if (cvData.skills.length === 0) errors.push('At least one skill is required');
     
+    // Validate certifications
+    if (cvData.certifications.length === 0) errors.push('At least one certification entry is required');
+
+    // Validate languages
+    if (cvData.languages.length === 0) errors.push('At least one language entry is required');
+
     setValidationErrors(errors);
     setIsFormValid(errors.length === 0);
     return errors.length === 0;
@@ -246,6 +343,71 @@ const CVBuilder: React.FC = () => {
     }
   };
 
+  const generateMarkdownCV = () => {
+    let markdown = `# ${cvData.personalInfo.fullName}\n\n`;
+    markdown += `**Contact Information:**\n`;
+    markdown += `- Email: ${cvData.personalInfo.email}\n`;
+    markdown += `- Phone: ${cvData.personalInfo.phone}\n`;
+    markdown += `- Address: ${cvData.personalInfo.address}\n`;
+
+    if (cvData.personalInfo.socialMedia.linkedin) markdown += `- LinkedIn: ${cvData.personalInfo.socialMedia.linkedin}\n`;
+    if (cvData.personalInfo.socialMedia.github) markdown += `- GitHub: ${cvData.personalInfo.socialMedia.github}\n`;
+    if (cvData.personalInfo.socialMedia.website) markdown += `- Website: ${cvData.personalInfo.socialMedia.website}\n`;
+    markdown += `\n`;
+
+    if (cvData.personalInfo.summary) {
+      markdown += `## Professional Summary\n`;
+      markdown += `${cvData.personalInfo.summary}\n\n`;
+    }
+
+    if (cvData.experience.length > 0) {
+      markdown += `## Work Experience\n`;
+      cvData.experience.forEach(exp => {
+        markdown += `### ${exp.title} at ${exp.company}\n`;
+        markdown += `${exp.location} | ${exp.startDate} - ${exp.endDate}\n`;
+        markdown += `${exp.description}\n\n`;
+      });
+    }
+
+    if (cvData.education.length > 0) {
+      markdown += `## Education\n`;
+      cvData.education.forEach(edu => {
+        markdown += `### ${edu.degree} from ${edu.school}\n`;
+        markdown += `${edu.location} | Graduated: ${edu.graduationDate}\n`;
+        if (edu.gpa) markdown += `GPA: ${edu.gpa}\n`;
+        markdown += `\n`;
+      });
+    }
+
+    if (cvData.skills.length > 0) {
+      markdown += `## Skills\n`;
+      markdown += cvData.skills.map(skill => `${skill.name} (${skill.level})`).join(', ') + '\n\n';
+    }
+
+    if (cvData.certifications.length > 0) {
+      markdown += `## Certifications\n`;
+      cvData.certifications.forEach(cert => {
+        markdown += `### ${cert.name}\n`;
+        markdown += `${cert.issuingOrganization} | Issued: ${cert.date}\n\n`;
+      });
+    }
+
+    if (cvData.languages.length > 0) {
+      markdown += `## Languages\n`;
+      cvData.languages.forEach(lang => {
+        markdown += `### ${lang.name}\n`;
+        markdown += `Proficiency: ${lang.proficiency}\n\n`;
+      });
+    }
+
+    if (cvData.personalInfo.additionalInfo) {
+      markdown += `## Additional Information\n`;
+      markdown += `${cvData.personalInfo.additionalInfo}\n\n`;
+    }
+
+    return markdown;
+  };
+
   return (
     <section id="builder" className="py-20 px-4 bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -288,6 +450,18 @@ const CVBuilder: React.FC = () => {
               </div>
               
               <div className="mt-8 space-y-3">
+                <h4 className="text-lg font-bold text-gray-900 mb-2">Choose Theme</h4>
+                <select
+                  value={selectedTheme}
+                  onChange={(e) => setSelectedTheme(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                  aria-label="Select CV Theme"
+                >
+                  <option value="blue">Modern Blue</option>
+                  <option value="earth">Earth Tones</option>
+                  <option value="green">Professional Green</option>
+                </select>
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -300,6 +474,26 @@ const CVBuilder: React.FC = () => {
                 >
                   <Eye size={16} />
                   <span>Preview</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (!isFormValid) {
+                      toast.error('Please complete all required fields before generating Markdown.');
+                      return;
+                    }
+                    setShowMarkdownPreview(true);
+                  }}
+                  className={`w-full font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
+                    isFormValid 
+                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
+                      : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Award size={16} /> {/* Using Award icon for Markdown for now, can change later */}
+                  <span>View Markdown</span>
                 </motion.button>
                 
                 <motion.button
@@ -425,6 +619,59 @@ const CVBuilder: React.FC = () => {
                   
                   <div className="mt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profile Photo (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files && updatePersonal('photo', e.target.files[0])}
+                      className="w-full text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      aria-label="Upload Profile Photo"
+                    />
+                    {cvData.personalInfo.photo && (
+                      <div className="mt-4 flex justify-center">
+                        <img src={cvData.personalInfo.photo} alt="Profile" className="w-32 h-32 rounded-full object-cover border-2 border-blue-200 shadow-md" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-6">
+                    <h4 className="text-lg font-bold text-gray-900 mb-4">Social Media (Optional)</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn Profile</label>
+                        <input
+                          type="url"
+                          value={cvData.personalInfo.socialMedia.linkedin}
+                          onChange={(e) => updatePersonal('socialMedia.linkedin', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="https://linkedin.com/in/yourprofile"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">GitHub Profile</label>
+                        <input
+                          type="url"
+                          value={cvData.personalInfo.socialMedia.github}
+                          onChange={(e) => updatePersonal('socialMedia.github', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="https://github.com/yourprofile"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Personal Website</label>
+                        <input
+                          type="url"
+                          value={cvData.personalInfo.socialMedia.website}
+                          onChange={(e) => updatePersonal('socialMedia.website', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="https://yourwebsite.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Professional Summary
                     </label>
                     <textarea
@@ -433,6 +680,18 @@ const CVBuilder: React.FC = () => {
                       onChange={(e) => updatePersonal('summary', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Write a compelling 2-3 sentence summary of your professional background and career goals..."
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Additional Information (Optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={cvData.personalInfo.additionalInfo}
+                      onChange={(e) => updatePersonal('additionalInfo', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Any other relevant information, e.g., references available upon request, interests, volunteer work..."
                     />
                   </div>
                 </div>
@@ -462,6 +721,7 @@ const CVBuilder: React.FC = () => {
                           <button
                             onClick={() => removeItem('experience', index)}
                             className="text-red-600 hover:text-red-800"
+                            aria-label="Remove experience"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -497,6 +757,7 @@ const CVBuilder: React.FC = () => {
                               value={exp.startDate}
                               onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              aria-label="Start Date"
                             />
                           </div>
                           
@@ -507,6 +768,7 @@ const CVBuilder: React.FC = () => {
                               value={exp.endDate}
                               onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              aria-label="End Date"
                             />
                           </div>
                         </div>
@@ -558,6 +820,7 @@ const CVBuilder: React.FC = () => {
                           <button
                             onClick={() => removeItem('education', index)}
                             className="text-red-600 hover:text-red-800"
+                            aria-label="Remove education"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -593,6 +856,7 @@ const CVBuilder: React.FC = () => {
                               value={edu.graduationDate}
                               onChange={(e) => updateEducation(index, 'graduationDate', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              aria-label="Graduation Date"
                             />
                           </div>
                           
@@ -654,6 +918,7 @@ const CVBuilder: React.FC = () => {
                             value={skill.level}
                             onChange={(e) => updateSkill(index, 'level', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            aria-label="Skill Level"
                           >
                             <option value="Beginner">Beginner</option>
                             <option value="Intermediate">Intermediate</option>
@@ -665,6 +930,7 @@ const CVBuilder: React.FC = () => {
                         <button
                           onClick={() => removeItem('skills', index)}
                           className="text-red-600 hover:text-red-800"
+                          aria-label="Remove skill"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -675,6 +941,153 @@ const CVBuilder: React.FC = () => {
                       <div className="text-center py-12 text-gray-500">
                         <Award className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                         <p>No skills added yet. Click "Add Skill" to get started.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications */}
+              {activeStep === 4 && (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900">Certifications</h3>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={addCertification}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+                    >
+                      <Plus size={16} />
+                      <span>Add Certification</span>
+                    </motion.button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {cvData.certifications.map((cert: any, index: number) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="text-lg font-semibold text-gray-900">Certification {index + 1}</h4>
+                          <button
+                            onClick={() => removeItem('certifications', index)}
+                            className="text-red-600 hover:text-red-800"
+                            aria-label="Remove certification"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Certification Name</label>
+                            <input
+                              type="text"
+                              value={cert.name}
+                              onChange={(e) => updateCertification(index, 'name', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="AWS Certified Developer"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Issuing Organization</label>
+                            <input
+                              type="text"
+                              value={cert.issuingOrganization}
+                              onChange={(e) => updateCertification(index, 'issuingOrganization', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Amazon Web Services"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Date of Issue</label>
+                            <input
+                              type="month"
+                              value={cert.date}
+                              onChange={(e) => updateCertification(index, 'date', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              aria-label="Date of Issue"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {cvData.certifications.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <Award className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                        <p>No certifications added yet. Click "Add Certification" to get started.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {activeStep === 5 && (
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900">Languages</h3>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={addLanguage}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+                    >
+                      <Plus size={16} />
+                      <span>Add Language</span>
+                    </motion.button>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {cvData.languages.map((lang: any, index: number) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="text-lg font-semibold text-gray-900">Language {index + 1}</h4>
+                          <button
+                            onClick={() => removeItem('languages', index)}
+                            className="text-red-600 hover:text-red-800"
+                            aria-label="Remove language"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                            <input
+                              type="text"
+                              value={lang.name}
+                              onChange={(e) => updateLanguage(index, 'name', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="English"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Proficiency</label>
+                            <select
+                              value={lang.proficiency}
+                              onChange={(e) => updateLanguage(index, 'proficiency', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              aria-label="Language Proficiency"
+                            >
+                              <option value="Beginner">Beginner</option>
+                              <option value="Intermediate">Intermediate</option>
+                              <option value="Advanced">Advanced</option>
+                              <option value="Native">Native</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {cvData.languages.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <Award className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                        <p>No languages added yet. Click "Add Language" to get started.</p>
                       </div>
                     )}
                   </div>
@@ -724,7 +1137,7 @@ const CVBuilder: React.FC = () => {
               ✕
             </button>
             <div id="cv-preview-modal-content">
-              <CVPreview data={cvData} />
+              <CVPreview data={cvData} selectedTheme={selectedTheme} />
             </div>
             <div className="flex justify-end mt-6">
               <button
@@ -732,6 +1145,40 @@ const CVBuilder: React.FC = () => {
                 className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Download size={18} /> Download PDF
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Markdown Preview Modal */}
+      {showMarkdownPreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowMarkdownPreview(false)}>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-8 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowMarkdownPreview(false)}
+              className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold mb-4">CV in Markdown Format</h2>
+            <div className="bg-gray-100 p-6 rounded-lg font-mono whitespace-pre-wrap text-sm leading-relaxed">
+              {generateMarkdownCV()}
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generateMarkdownCV());
+                  toast.success('Markdown copied to clipboard!');
+                }}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Copy Markdown
               </button>
             </div>
           </motion.div>
